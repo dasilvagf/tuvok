@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "include/tuvok.h"
 
-int main (int argc, char* argv)
+int main (int argc, char** argv)
 {
 	tuvok* lib_core = init_lib(800, 600, "tuvok lib - sample");
 
