@@ -32,6 +32,8 @@ typedef struct tuvok_t
 	VkInstance vk_instance; // represents the system at a higher level 
 	VkDebugUtilsMessengerEXT vk_debug; // debug utils instance 
 	VkPhysicalDevice gpu; // represents a GPU with vulkan support
+	VkDevice device; // logical representation of our gpu
+	VkQueue queue; // queues store the commands we send to the gpu
 }tuvok;
 
 tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name);

@@ -160,6 +160,7 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 			printf("\tGPU type: Other\n");
 	}
 
+	VkPhysicalDeviceFeatures curr_vk_df = {};
 	// get the first gpu that support what want
 	for (uint32_t i = 0u; i < gpus_count; ++i){
 		VkPhysicalDeviceFeatures vk_df = {};
@@ -168,12 +169,72 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 		// check the features we want
 		if (vk_df.geometryShader)
 		{
+			curr_vk_df = vk_df;
 			tvk->gpu = vulkan_gpus[i];
 			break;
 		}
 	}
 	free(vulkan_gpus);
 
+	// --------------------------------------------------
+	// get the Queue we'll use to submit our commands
+	// --------------------------------------------------
+
+	// no need to check as all vulkan gpus support at least one queue
+	uint32_t queue_count;
+	vkGetPhysicalDeviceQueueFamilyProperties(tvk->gpu, &queue_count, NULL);
+
+	VkQueueFamilyProperties* queues_family = (VkQueueFamilyProperties*) 
+		malloc(sizeof(VkQueueFamilyProperties)*queue_count);
+	vkGetPhysicalDeviceQueueFamilyProperties(tvk->gpu, &queue_count, queues_family);
+
+	// get the first queue which supports both compute and graphics
+	printf("TUVOK INFO: Avaliable queue families\n");
+	uint32_t queue_index;
+	for (uint32_t i = 0u; i < queue_count; ++i){
+		if ((queues_family[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && 
+		    (queues_family[i].queueFlags & VK_QUEUE_COMPUTE_BIT) &&
+		    (queues_family[i].queueFlags & VK_QUEUE_TRANSFER_BIT))
+		{
+			printf("\tGraphics, Compute and Transfer: %u\n", queues_family[i].queueCount);
+			queue_index = i;
+		}
+		else if (queues_family[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			printf("\tGraphics Only: %u\n", queues_family[i].queueCount);
+		else if (queues_family[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
+			printf("\tCompute Only: %u\n", queues_family[i].queueCount);
+		else if (queues_family[i].queueFlags & VK_QUEUE_TRANSFER_BIT)
+			printf("\tTransfer Only: %u\n", queues_family[i].queueCount);
+	}
+	free(queues_family);
+
+	// --------------------------------------------------
+	// create out logical device representing our gpu 
+	// and using the queue we select to send commands
+	// --------------------------------------------------
+	VkDeviceQueueCreateInfo vk_qci = {};
+	vk_qci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	vk_qci.queueFamilyIndex = queue_index;
+	vk_qci.queueCount = 1;
+	float priority = 1.0f; // means 100% priority (we use only 1 queue so doesn't matter)
+	vk_qci.pQueuePriorities = &priority;
+
+	VkDeviceCreateInfo vk_dci = {};
+	vk_dci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	vk_dci.queueCreateInfoCount = 1;
+	vk_dci.pQueueCreateInfos = &vk_qci;
+	vk_dci.pEnabledFeatures = &curr_vk_df;
+
+	if(vkCreateDevice(tvk->gpu, &vk_dci, NULL, &tvk->device) != VK_SUCCESS)
+	{
+		free_lib(tvk);
+		fprintf(stderr, "TUVOK ERROR: Failed to create vulkan logical device!\n");
+		return NULL;	
+	}
+
+	// get the queue associated with our device
+	vkGetDeviceQueue(tvk->device, queue_index, 0, &tvk->queue);
+	
 	return tvk;
 }
 
@@ -185,6 +246,8 @@ void free_lib(tuvok* tvk)
 			glfwDestroyWindow(tvk->window);
 		
 
+		if (tvk->device)
+			vkDestroyDevice(tvk->device, NULL);
 #if USE_VALIDATION_LAYERS
 		if (vk_destroy_debug_ext) vk_destroy_debug_ext(tvk->vk_instance, tvk->vk_debug, NULL);
 #endif
@@ -192,6 +255,8 @@ void free_lib(tuvok* tvk)
 			vkDestroyInstance(tvk->vk_instance, NULL);
 		glfwTerminate();
 	}
+
+	free(tvk);
 }
 
 #if USE_VALIDATION_LAYERS
