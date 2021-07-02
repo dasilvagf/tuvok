@@ -30,10 +30,18 @@ typedef struct tuvok_t
 {
 	GLFWwindow* window;
 	VkInstance vk_instance; // represents the system at a higher level 
+	VkSurfaceKHR vk_context; // rendering context between vulkan and the window
 	VkDebugUtilsMessengerEXT vk_debug; // debug utils instance 
 	VkPhysicalDevice gpu; // represents a GPU with vulkan support
 	VkDevice device; // logical representation of our gpu
-	VkQueue queue; // queues store the commands we send to the gpu
+	
+	// queues store the commands we send to the gpu
+	uint32_t use_common_queue;
+	VkQueue rendering_queue; // rendering commands only
+        VkQueue compute_queue; // asynchronous compute only
+	VkQueue prensentation_queue; // presentation only	
+	VkQueue common_queue; // supports rendering, compute and presentation
+
 }tuvok;
 
 tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name);
