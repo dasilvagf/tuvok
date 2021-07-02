@@ -187,6 +187,49 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 	free(vulkan_gpus);
 
 	// --------------------------------------------------
+	//    check if the GPU (physical device) support
+	//    the extensions we want
+	// --------------------------------------------------
+	
+	// put the extensions names here
+	uint32_t n_ext = 1u;
+	char** extensions = (char**) malloc(sizeof(char*)*n_ext); 
+	extensions[0] = "VK_KHR_swapchain"; // swap-chain support
+	//extensions[1] = "VK_KHR_acceleration_structure";
+
+	// get the number of available extensions
+	uint32_t n_avaliable_ext; 
+	vkEnumerateDeviceExtensionProperties(tvk->gpu, NULL, &n_avaliable_ext, NULL);
+	
+	// get the availiable extensions
+	VkExtensionProperties* avaliable_ext = (VkExtensionProperties*) 
+		malloc(sizeof(VkExtensionProperties)*n_avaliable_ext);
+	vkEnumerateDeviceExtensionProperties(tvk->gpu, NULL, &n_avaliable_ext, 
+			avaliable_ext);
+
+	// check if the extensions we want are present
+	uint32_t* found_count = (uint32_t*) malloc(sizeof(uint32_t)*n_ext);
+	memset(found_count, 0u, sizeof(uint32_t)*n_ext);
+
+	for (uint32_t i = 0u; i < n_avaliable_ext; ++i){
+		for (uint32_t j = 0u; j < n_ext; ++j)
+			if (strcmp(extensions[j], avaliable_ext[i].extensionName) == 0)
+				found_count[j] = 1u;
+	}
+	free(avaliable_ext);
+	
+	for (uint32_t j = 0u; j < n_ext; ++j)
+		if (found_count[j] == 0u)
+		{
+			free(found_count);
+			free_lib(tvk);
+			fprintf(stderr, "TUVOK ERROR: Some of the required extensions are not avaliable!\n");
+			return NULL;	
+		}
+
+	free(found_count);
+
+	// --------------------------------------------------
 	// get the Queue we'll use to submit our commands
 	// --------------------------------------------------
 
@@ -257,6 +300,8 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 		vk_dci.queueCreateInfoCount = 1;
 		vk_dci.pQueueCreateInfos = &vk_qci;
 		vk_dci.pEnabledFeatures = &curr_vk_df;
+		vk_dci.enabledExtensionCount = n_ext;
+		vk_dci.ppEnabledExtensionNames = extensions;
 
 		if(vkCreateDevice(tvk->gpu, &vk_dci, NULL, &tvk->device) != VK_SUCCESS)
 		{
@@ -278,11 +323,15 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 		fprintf(stderr, "TUVOK TODO ERROR: I have to implement diffrent queues support!\n");
 		return NULL;	
 	}
+	free(extensions);
 
 	// --------------------------------------------------
 	//    create the swap chain for double-buffering
 	// --------------------------------------------------
 	
+
+
+
 
 	return tvk;
 }
