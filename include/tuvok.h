@@ -26,9 +26,16 @@ static PFN_vkDestroyDebugUtilsMessengerEXT vk_destroy_debug_ext;
 #define USE_VALIDATION_LAYERS 0u
 #endif
 
+static void GLFW_error_function(int error_code, const char* error_msg)
+{
+	fprintf(stderr, error_msg);
+}
+
 typedef struct tuvok_t
 {
 	GLFWwindow* window;
+	int32_t window_width, window_height;
+	
 	VkInstance vk_instance; // represents the system at a higher level 
 	VkSurfaceKHR vk_context; // rendering context between vulkan and the window
 	VkDebugUtilsMessengerEXT vk_debug; // debug utils instance 

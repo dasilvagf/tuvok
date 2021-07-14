@@ -12,6 +12,7 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	tvk->window = glfwCreateWindow(width, height, window_name, NULL, NULL);
+	glfwSetErrorCallback(GLFW_error_function);
 
 	// --------------------------------------------------
 	// init Vulkan (you mean Vulcan, right!?)
@@ -320,7 +321,7 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 		//TODO: handle a separated queue for asynchronous compute
 		
 		free_lib(tvk);
-		fprintf(stderr, "TUVOK TODO ERROR: I have to implement diffrent queues support!\n");
+		fprintf(stderr, "TUVOK TODO ERROR: I have to implement different queues support!\n");
 		return NULL;	
 	}
 	free(extensions);
@@ -329,8 +330,69 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 	//    create the swap chain for double-buffering
 	// --------------------------------------------------
 	
+	// get the capabilities of the surface (context)
+	VkSurfaceCapabilitiesKHR surf_caps;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(tvk->gpu, tvk->vk_context, &surf_caps);
 
+	// get the surface formats that support presentation
+	uint32_t n_surfaces = 0u;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(tvk->gpu, tvk->vk_context, &n_surfaces, NULL);
+	if (!n_surfaces)
+	{
+		free_lib(tvk);
+		fprintf(stderr, "TUVOK TODO ERROR: This device DO NOT support presentation!\n");
+		return NULL;	
+	}
 
+	VkSurfaceFormatKHR* surfaces = (VkSurfaceFormatKHR*) 
+		malloc(sizeof(VkSurfaceFormatKHR)*n_surfaces);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(tvk->gpu, tvk->vk_context, &n_surfaces, surfaces);
+
+	// select the best avaliable surface for presentation
+	VkSurfaceFormatKHR swap_surf = surfaces[0];
+	for (uint32_t i = 0u; i < n_surfaces; ++i){
+		if (surfaces[i].format == VK_FORMAT_B8G8R8A8_SRGB && 
+			surfaces[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+		      swap_surf = surfaces[i];	
+		      printf("TUVOK INFO: Using B8G8R8A8_SRGB SwapChain\n");
+		}
+	}
+	free(surfaces);
+
+	// get the presentation modes
+	uint32_t n_presents = 0u;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(tvk->gpu, tvk->vk_context, &n_presents, NULL);
+	
+	VkPresentModeKHR* p_modes = (VkPresentModeKHR*)
+		malloc(sizeof(VkPresentModeKHR)*n_presents);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(tvk->gpu, tvk->vk_context, &n_presents, p_modes);
+
+	// check support for triple-buffering, if not availible fall down to double-buffering
+	VkPresentModeKHR presentation_mode = VK_PRESENT_MODE_FIFO_KHR;
+	for (uint32_t i = 0u; i < n_presents; ++i){
+		if (p_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+		{
+			presentation_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+			printf("TUVOK INFO: Triple Buffering is supported!\n");
+		}
+	}
+	free(p_modes);
+
+	// set resolution of the swap-chain buffers
+	glfwGetFramebufferSize(tvk->window, &tvk->window_width, &tvk->window_height);
+	VkExtent2D vk_extent = {tvk->window_width, tvk->window_height};
+	
+	// clamp dimensions to the supported values
+	vk_extent.width = (tvk->window_width < surf_caps.minImageExtent.width) ?
+		surf_caps.minImageExtent.width : vk_extent.width;
+	vk_extent.width = (tvk->window_width > surf_caps.maxImageExtent.width) ?
+		surf_caps.maxImageExtent.width : vk_extent.width;
+
+	vk_extent.height = (tvk->window_height < surf_caps.minImageExtent.height) ?
+		surf_caps.minImageExtent.height : vk_extent.height;
+	vk_extent.height = (tvk->window_height > surf_caps.maxImageExtent.height) ?
+		surf_caps.maxImageExtent.height : vk_extent.height;
 
 
 	return tvk;
