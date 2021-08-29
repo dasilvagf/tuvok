@@ -317,11 +317,10 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 	else
 	{
 		//TODO: handle a seperated queue for presentation
-
 		//TODO: handle a separated queue for asynchronous compute
+		assert(0);
 		
-		free_lib(tvk);
-		fprintf(stderr, "TUVOK TODO ERROR: I have to implement different queues support!\n");
+        free_lib(tvk);
 		return NULL;	
 	}
 	free(extensions);
@@ -394,8 +393,48 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 	vk_extent.height = (tvk->window_height > surf_caps.maxImageExtent.height) ?
 		surf_caps.maxImageExtent.height : vk_extent.height;
 
+    // see how many images my swap-chain can hold
+    uint32_t image_count = surf_caps.minImageCount; 
+    if (surf_caps.maxImageCount > 0 && image_count > surf_caps.maxImageCount)
+        image_count = surf_caps.maxImageCount;
 
-	return tvk;
+    // finally create the swap-chain
+    VkSwapchainCreateInfoKHR swp_cb = {};
+    swp_cb.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swp_cb.surface = tvk->vk_context;
+    swp_cb.minImageCount = image_count;
+    swp_cb.imageFormat = swap_surf.format;
+    swp_cb.imageColorSpace = swap_surf.colorSpace;
+    swp_cb.imageExtent = vk_extent;
+    swp_cb.imageArrayLayers = 1;
+    swp_cb.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swp_cb.preTransform = surf_caps.currentTransform;
+    swp_cb.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swp_cb.presentMode = presentation_mode;
+    swp_cb.clipped = VK_TRUE;
+    swp_cb.oldSwapchain = VK_NULL_HANDLE;
+
+    // presentation and rendering use the same queue
+    if (tvk->use_common_queue)
+        swp_cb.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    else
+    {
+        //TODO: handle swap-chain presentation when I have separate queues
+        // for presentation and rendering
+		assert(0);
+    }
+
+    if (vkCreateSwapchainKHR(tvk->device, &swp_cb, NULL, &tvk->swap_chain) 
+            != VK_SUCCESS)
+    {
+        free_lib(tvk);
+		fprintf(stderr, "TUVOK ERROR: Swap-Chain Creation Falied!\n");
+		return NULL;	
+    }
+
+
+	
+    return tvk;
 }
 
 void free_lib(tuvok* tvk)
@@ -405,6 +444,8 @@ void free_lib(tuvok* tvk)
 		if (tvk->window)
 			glfwDestroyWindow(tvk->window);
 		
+        if (tvk->swap_chain)
+            vkDestroySwapchainKHR(tvk->device, tvk->swap_chain, NULL);
 
 		if (tvk->device)
 			vkDestroyDevice(tvk->device, NULL);

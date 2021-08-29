@@ -6,10 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <GLFW/glfw3.h>
 
-// use validation layers (like the debug layers in D3D11)
 #ifdef DEBUG 
+// use validation layers (like the debug layers in D3D11)
 #define USE_VALIDATION_LAYERS 1u
 
 // handle the debug info sended to us
@@ -41,11 +42,12 @@ typedef struct tuvok_t
 	VkDebugUtilsMessengerEXT vk_debug; // debug utils instance 
 	VkPhysicalDevice gpu; // represents a GPU with vulkan support
 	VkDevice device; // logical representation of our gpu
-	
+	VkSwapchainKHR swap_chain;
+
 	// queues store the commands we send to the gpu
 	uint32_t use_common_queue;
 	VkQueue rendering_queue; // rendering commands only
-        VkQueue compute_queue; // asynchronous compute only
+    VkQueue compute_queue; // asynchronous compute only
 	VkQueue prensentation_queue; // presentation only	
 	VkQueue common_queue; // supports rendering, compute and presentation
 
