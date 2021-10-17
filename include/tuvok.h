@@ -42,7 +42,12 @@ typedef struct tuvok_t
 	VkDebugUtilsMessengerEXT vk_debug; // debug utils instance 
 	VkPhysicalDevice gpu; // represents a GPU with vulkan support
 	VkDevice device; // logical representation of our gpu
-	VkSwapchainKHR swap_chain;
+	VkSwapchainKHR swap_chain; // represents the swap chain. really? G.G
+    uint32_t n_swap_images; // # surfaces(vk_images) in the swap_images buffer
+    VkImage* swap_images; // surfaces in the swap chain
+    VkImageView* swap_views; // act like resource views in D3D
+    VkFormat swap_fmt; // represent the format of surfaces in the swap chain
+    VkExtent2D swap_extent; // represent the dimension (W/H) of the surfaces
 
 	// queues store the commands we send to the gpu
 	uint32_t use_common_queue;

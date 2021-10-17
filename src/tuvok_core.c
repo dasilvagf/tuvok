@@ -359,6 +359,7 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 	}
 	free(surfaces);
 
+
 	// get the presentation modes
 	uint32_t n_presents = 0u;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(tvk->gpu, tvk->vk_context, &n_presents, NULL);
@@ -432,8 +433,51 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 		return NULL;	
     }
 
+    // set swap chain info for future use
+    tvk->swap_fmt = swap_surf.format;
+    tvk->swap_extent = vk_extent;
 
-	
+    // acquire the surfaces of the swap-chain
+    vkGetSwapchainImagesKHR(tvk->device, tvk->swap_chain, &tvk->n_swap_images,
+            NULL);
+    tvk->swap_images = (VkImage*) malloc(sizeof(VkImage)*tvk->n_swap_images);
+    tvk->swap_views  = (VkImageView*) 
+        malloc(sizeof(VkImageView)*tvk->n_swap_images);
+
+    vkGetSwapchainImagesKHR(tvk->device, tvk->swap_chain, &tvk->n_swap_images,
+            tvk->swap_images);
+ 
+    // create the image views to interpret the swap chain images
+    VkImageViewCreateInfo vk_vcif = {};
+    vk_vcif.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vk_vcif.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vk_vcif.format = tvk->swap_fmt;
+    vk_vcif.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    vk_vcif.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    vk_vcif.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    vk_vcif.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    vk_vcif.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk_vcif.subresourceRange.baseMipLevel = 0;
+    vk_vcif.subresourceRange.levelCount = 1;
+    vk_vcif.subresourceRange.baseArrayLayer = 0;
+    vk_vcif.subresourceRange.layerCount = 1;
+
+    for (uint32_t i = 0u; i < tvk->n_swap_images; ++i){
+        vk_vcif.image = tvk->swap_images[i];
+        if (vkCreateImageView(tvk->device, &vk_vcif, NULL, &tvk->swap_views[i])
+                != VK_SUCCESS)
+        {
+            free_lib(tvk);
+            fprintf(stderr, "TUVOK ERROR: Swap-Chain ImageViews Creation Falied!\n");
+            return NULL;	
+        }
+    }
+
+    //
+    // WE'RE HERE IN THE READING
+    // https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules/
+    //
+
     return tvk;
 }
 
@@ -441,11 +485,23 @@ void free_lib(tuvok* tvk)
 {
 	if (tvk)
 	{
-		if (tvk->window)
+        printf("TUVOK INFO: Exiting...!\n");
+		
+        if (tvk->window)
 			glfwDestroyWindow(tvk->window);
 		
         if (tvk->swap_chain)
             vkDestroySwapchainKHR(tvk->device, tvk->swap_chain, NULL);
+
+        if (tvk->swap_images)
+            free(tvk->swap_images);
+
+        if (tvk->swap_views)
+        {
+            for (uint32_t i = 0u; i < tvk->n_swap_images; ++i)
+                vkDestroyImageView(tvk->device, tvk->swap_views[i], NULL);
+            free(tvk->swap_views);
+        }
 
 		if (tvk->device)
 			vkDestroyDevice(tvk->device, NULL);
