@@ -164,15 +164,15 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 
 		printf("\tGPU name: %s\n", vk_dp.deviceName);
 		if (vk_dp.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
-			printf("\tGPU type: Integrated\n");
+			printf("\t\tGPU type: Integrated\n");
 		else if (vk_dp.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-			printf("\tGPU type: Discrete\n");
+			printf("\t\tGPU type: Discrete\n");
 		else
-			printf("\tGPU type: Other\n");
+			printf("\t\tGPU type: Other\n");
 	}
 
 	VkPhysicalDeviceFeatures curr_vk_df = {};
-	// get the first gpu that support what want
+	// get the first gpu that support what we want
 	for (uint32_t i = 0u; i < gpus_count; ++i){
 		VkPhysicalDeviceFeatures vk_df = {};
 		vkGetPhysicalDeviceFeatures(vulkan_gpus[i], &vk_df);
@@ -182,10 +182,16 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 		{
 			curr_vk_df = vk_df;
 			tvk->gpu = vulkan_gpus[i];
-			break;
+			
+            VkPhysicalDeviceProperties vk_dp = {};
+            vkGetPhysicalDeviceProperties(vulkan_gpus[i], &vk_dp);
+            strcpy(tvk->gpu_name, vk_dp.deviceName);
+            break;
 		}
 	}
 	free(vulkan_gpus);
+
+    printf("TUVOK INFO: Selected GPU: %s \n", tvk->gpu_name);
 
 	// --------------------------------------------------
 	//    check if the GPU (physical device) support
@@ -287,7 +293,7 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 	// create our logical device representing our gpu 
 	// and using the queue we select to send commands
 	// --------------------------------------------------
-	if (tvk->use_common_queue)
+	if (/*tvk->use_common_queue FOR NOW WE USE ONE QUEUE ANYWAYS*/ 1u)
 	{
 		VkDeviceQueueCreateInfo vk_qci = {};
 		vk_qci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -416,7 +422,7 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
     swp_cb.oldSwapchain = VK_NULL_HANDLE;
 
     // presentation and rendering use the same queue
-    if (tvk->use_common_queue)
+    if (/*tvk->use_common_queue ASSUME WE USING COMOM QUEUES*/ 1u)
         swp_cb.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     else
     {
@@ -473,6 +479,7 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
         }
     }
 
+
     //
     // WE'RE HERE IN THE READING
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules/
@@ -517,6 +524,48 @@ void free_lib(tuvok* tvk)
 
 	free(tvk);
 }
+
+
+tuvok_shader* load_shader(const char* filename, const char* main_name, uint8_t is_bytecode)
+{
+    if (!is_bytecode)
+        assert(0u);
+
+    FILE* pFile;
+    pFile = fopen(filename, "r");
+
+    if (pFile)
+    {
+         // get file size;
+         fseek (pFile , 0 , SEEK_END);
+         long lSize = ftell (pFile);
+         rewind (pFile);
+
+         // read our bytecode
+         char* bytecode_buffer = (char*) malloc(lSize);
+         if (fread(bytecode_buffer, sizeof(char)/* a.k.a 1*/, lSize, pFile) != lSize)
+         {
+             free(bytecode_buffer);
+             fclose(pFile);
+             return NULL;
+         }
+
+         fclose(pFile);
+    }
+
+    return NULL;
+}
+
+void free_shader(tuvok_shader* shader)
+{
+    if (shader)
+    {
+
+    }
+}
+
+
+
 
 #if USE_VALIDATION_LAYERS
 VkBool32 VKAPI_PTR vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 

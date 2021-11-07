@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <malloc.h>
 #include <GLFW/glfw3.h>
 
 #ifdef DEBUG 
@@ -37,11 +38,12 @@ typedef struct tuvok_t
 	GLFWwindow* window;
 	int32_t window_width, window_height;
 	
-	VkInstance vk_instance; // represents the system at a higher level 
+    VkInstance vk_instance; // represents the system at a higher level 
 	VkSurfaceKHR vk_context; // rendering context between vulkan and the window
 	VkDebugUtilsMessengerEXT vk_debug; // debug utils instance 
 	VkPhysicalDevice gpu; // represents a GPU with vulkan support
-	VkDevice device; // logical representation of our gpu
+	char gpu_name[256];
+    VkDevice device; // logical representation of our gpu
 	VkSwapchainKHR swap_chain; // represents the swap chain. really? G.G
     uint32_t n_swap_images; // # surfaces(vk_images) in the swap_images buffer
     VkImage* swap_images; // surfaces in the swap chain
@@ -60,5 +62,12 @@ typedef struct tuvok_t
 
 tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name);
 void free_lib(tuvok* tvk);
+
+typedef struct tuvok_shader_t
+{
+}tuvok_shader;
+tuvok_shader* load_shader(const char* filename, const char* main_name, uint8_t is_bytecode);
+void free_shader_bytecode(tuvok_shader* shader);
+
 
 #endif
