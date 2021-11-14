@@ -202,7 +202,7 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
 	uint32_t n_ext = 1u;
 	char** extensions = (char**) malloc(sizeof(char*)*n_ext); 
 	extensions[0] = "VK_KHR_swapchain"; // swap-chain support
-	//extensions[1] = "VK_KHR_acceleration_structure";
+	extensions[1] = "VK_KHR_acceleration_structure"; // ray-tracing support
 
 	// get the number of available extensions
 	uint32_t n_avaliable_ext; 
@@ -479,12 +479,6 @@ tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name)
         }
     }
 
-
-    //
-    // WE'RE HERE IN THE READING
-    // https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules/
-    //
-
     return tvk;
 }
 
@@ -525,8 +519,8 @@ void free_lib(tuvok* tvk)
 	free(tvk);
 }
 
-
-tuvok_shader* load_shader(const char* filename, const char* main_name, uint8_t is_bytecode)
+tuvok_shader* load_shader(const tuvok* tvk, const char* filename, const char* main_name, 
+        uint8_t is_bytecode, VkShaderStageFlagBits stage)
 {
     if (!is_bytecode)
         assert(0u);
@@ -545,25 +539,61 @@ tuvok_shader* load_shader(const char* filename, const char* main_name, uint8_t i
          char* bytecode_buffer = (char*) malloc(lSize);
          if (fread(bytecode_buffer, sizeof(char)/* a.k.a 1*/, lSize, pFile) != lSize)
          {
+             fprintf(stderr, "TUVOK ERROR: Shader bytecode couldn't be loaded!\n");
              free(bytecode_buffer);
              fclose(pFile);
              return NULL;
          }
 
+         // create our shader module from the blob bytecode
+         tuvok_shader* shader = (tuvok_shader*) malloc(sizeof(tuvok_shader));
+         VkShaderModuleCreateInfo vs_smci = {};
+         vs_smci.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+         vs_smci.codeSize = lSize;
+         vs_smci.pCode = (const uint32_t*)bytecode_buffer;
+
+         if (vkCreateShaderModule(tvk->device, &vs_smci, NULL, &shader->shader_module) != VK_SUCCESS)
+         {
+             fprintf(stderr, "TUVOK ERROR: SPIR-V Shader module couldn't be created!\n");
+             free(shader);
+             free(bytecode_buffer);
+             fclose(pFile);
+             return NULL;
+         }
+
+         // info to the pipeline on how to read this bytecode
+         shader->pipe_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+         shader->pipe_info.module = shader->shader_module;
+         shader->pipe_info.stage = stage;
+         shader->pipe_info.pName = main_name;
+
+         free(bytecode_buffer);
          fclose(pFile);
+
+         return shader;
     }
 
     return NULL;
 }
 
-void free_shader(tuvok_shader* shader)
+void free_shader(const tuvok* tvk, tuvok_shader* shader)
 {
     if (shader)
     {
-
+        vkDestroyShaderModule(tvk->device, shader->shader_module, NULL);
+        free(shader);
     }
 }
 
+tuvok_pipeline* create_pipeline(const tuvok* tvk, tuvok_pipeline_desc desc)
+{
+    //
+    // I'M here
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
+
+
+    return NULL;
+}
 
 
 

@@ -60,14 +60,41 @@ typedef struct tuvok_t
 
 }tuvok;
 
+typedef struct tuvok_shader_t
+{
+    VkShaderModule shader_module; // contains shader in SPIR-V bytecode
+    VkPipelineShaderStageCreateInfo pipe_info; // imformation for the pipeline on how to interpret the bytecode
+}tuvok_shader;
+
+typedef struct tuvok_pipeline_desc_t
+{
+
+}tuvok_pipeline_desc;
+
+typedef struct tuvok_pipeline_t
+{
+
+}tuvok_pipeline;
+
+/*
+ *      init and shutdown the lib
+ */
 tuvok* init_lib(uint32_t width, uint32_t height, const char* window_name);
 void free_lib(tuvok* tvk);
 
-typedef struct tuvok_shader_t
-{
-}tuvok_shader;
-tuvok_shader* load_shader(const char* filename, const char* main_name, uint8_t is_bytecode);
-void free_shader_bytecode(tuvok_shader* shader);
+/*
+ *      shader bytecode loading
+ */
+tuvok_shader* load_shader(const tuvok* tvk, const char* filename, const char* main_name, uint8_t is_bytecode, 
+        VkShaderStageFlagBits stage);
+void free_shader(const tuvok* tvk, tuvok_shader* shader);
+
+/*
+ *      fixed-function and programmanle pipeline configs       
+ */
+tuvok_pipeline* create_pipeline(const tuvok* tvk, tuvok_pipeline_desc desc);
+void free_pipeline(const tuvok* tvk, tuvok_pipeline* pipe);
+void set_pipeline(const tuvok* tvk, const tuvok_pipeline* pipe);
 
 
 #endif
