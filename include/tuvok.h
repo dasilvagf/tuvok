@@ -68,6 +68,21 @@ typedef struct tuvok_shader_t
 
 typedef struct tuvok_pipeline_desc_t
 {
+    // describe vertex buffer layouts
+    uint32_t n_vb_layouts;
+    VkVertexInputBindingDescription* vb_layouts_array; 
+    uint32_t n_vb_attributes;
+    VkVertexInputAttributeDescription* vb_attributes_array;
+
+    // input assembly
+    VkPrimitiveTopology ia_topology;
+    VkBool32 ia_restart_enabled;
+
+    // viewport and scissor rect
+    uint32_t n_viewports;
+    VkViewport* viewports_array;
+    uint32_t n_scissor_rects;
+    VkRect2D* scissor_rect_array;
 
 }tuvok_pipeline_desc;
 

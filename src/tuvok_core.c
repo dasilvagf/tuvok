@@ -587,10 +587,31 @@ void free_shader(const tuvok* tvk, tuvok_shader* shader)
 
 tuvok_pipeline* create_pipeline(const tuvok* tvk, tuvok_pipeline_desc desc)
 {
+    // describe vertex buffer data layout and how it will be pased to the VS
+    VkPipelineVertexInputStateCreateInfo vi = {};
+    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vi.vertexBindingDescriptionCount = desc.n_vb_layouts;
+    vi.pVertexBindingDescriptions = desc.vb_layouts_array;
+    vi.vertexAttributeDescriptionCount = desc.n_vb_attributes;
+    vi.pVertexAttributeDescriptions = desc.vb_attributes_array;
+
+    // describe how to interprete the vertices (the infamous input assembler)
+    VkPipelineInputAssemblyStateCreateInfo ia = {};
+    ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia.topology = desc.ia_topology;
+    ia.primitiveRestartEnable = desc.ia_restart_enabled;
+
+    // viewport and scissor rect
+    VkPipelineViewportStateCreateInfo vp = {};
+    vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    vp.viewportCount = desc.n_viewports;
+    vp.pViewports = desc.viewports_array;
+    vp.scissorCount = desc.n_scissor_rects;
+    vp.pScissors = desc.scissor_rect_array;
+
     //
     // I'M here
     // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
-
 
     return NULL;
 }
