@@ -609,6 +609,44 @@ tuvok_pipeline* create_pipeline(const tuvok* tvk, tuvok_pipeline_desc desc)
     vp.scissorCount = desc.n_scissor_rects;
     vp.pScissors = desc.scissor_rect_array;
 
+    // rasterizer
+    VkPipelineRasterizationStateCreateInfo rs = {};
+    rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rs.depthClampEnable = desc.depth_clamp_enable;
+    rs.rasterizerDiscardEnable = desc.disable_raster_stage;
+    rs.polygonMode = desc.polygon_mode;
+    rs.lineWidth = desc.line_width;
+    rs.cullMode = desc.cull_mode;
+    rs.frontFace = desc.front_face_winding;
+    rs.depthBiasEnable = desc.depth_bias_enable;
+    rs.depthBiasConstantFactor = desc.depth_bias_constant_factor;
+    rs.depthBiasClamp = desc.depth_bias_clamp;
+    rs.depthBiasSlopeFactor = desc.depth_bias_slope_factor;
+
+    // multisampling
+    VkPipelineMultisampleStateCreateInfo ms = {};
+    ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    ms.sampleShadingEnable = desc.sample_shading_enable;
+    ms.rasterizationSamples = desc.samples_per_pixel;
+    ms.minSampleShading = desc.min_sample_shading;
+    ms.pSampleMask = desc.sample_masks_array;
+    ms.alphaToCoverageEnable = desc.alpha_to_coverage_enable;
+    ms.alphaToOneEnable = desc.alpha_to_one_enable;
+
+    // depth/stencil
+    VkPipelineDepthStencilStateCreateInfo ds = {};
+    ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds.flags = desc.optional_flags;
+    ds.depthTestEnable = desc.depth_test_enable;
+    ds.depthWriteEnable = desc.depth_write_enable;
+    ds.depthCompareOp = desc.frag_compare_operation;
+    ds.depthBoundsTestEnable = desc.depth_bounds_test_enable;
+    ds.stencilTestEnable = desc.stencil_test_enable;
+    ds.front = desc.stencil_front;
+    ds.back = desc.stencil_back;
+    ds.minDepthBounds = desc.min_depth_bound;
+    ds.maxDepthBounds = desc.max_depth_bound;
+
     //
     // I'M here
     // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions

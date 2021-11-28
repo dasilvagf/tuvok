@@ -84,6 +84,38 @@ typedef struct tuvok_pipeline_desc_t
     uint32_t n_scissor_rects;
     VkRect2D* scissor_rect_array;
 
+    // rasterizer
+    VkBool32 depth_clamp_enable;
+    VkBool32 disable_raster_stage;
+    VkPolygonMode polygon_mode;
+    float line_width;
+    VkCullModeFlags cull_mode;
+    VkFrontFace front_face_winding;
+    VkBool32 depth_bias_enable;
+    float depth_bias_constant_factor;
+    float depth_bias_clamp;
+    float depth_bias_slope_factor;
+
+    // multisampling
+    VkBool32 sample_shading_enable; //https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#primsrast-sampleshading
+    VkSampleCountFlagBits samples_per_pixel;
+    float min_sample_shading;
+    VkSampleMask* sample_masks_array;
+    VkBool32 alpha_to_coverage_enable;
+    VkBool32 alpha_to_one_enable;
+
+    // depth/stencil
+    VkBool32 depth_test_enable;
+    VkBool32 depth_write_enable;
+    VkCompareOp frag_compare_operation;
+    VkBool32 depth_bounds_test_enable;
+    VkBool32 stencil_test_enable;
+    VkStencilOpState stencil_front;
+    VkStencilOpState stencil_back;
+    float min_depth_bound;
+    float max_depth_bound;
+    VkPipelineDepthStencilStateCreateFlags optional_flags;
+
 }tuvok_pipeline_desc;
 
 typedef struct tuvok_pipeline_t
