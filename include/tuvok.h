@@ -116,11 +116,18 @@ typedef struct tuvok_pipeline_desc_t
     float max_depth_bound;
     VkPipelineDepthStencilStateCreateFlags optional_flags;
 
+    // color blending
+    uint32_t n_render_targets;
+    VkBool32 use_logical_ops;
+    VkLogicOp logical_op; // only if you use logics ops
+    float blend_const_rgba[4]; // const to add in the bleding equation (optional)
+    VkPipelineColorBlendAttachmentState* color_blending_states; // one for each render target
+
 }tuvok_pipeline_desc;
 
 typedef struct tuvok_pipeline_t
 {
-
+    VkPipelineLayout* layout;
 }tuvok_pipeline;
 
 /*

@@ -585,6 +585,24 @@ void free_shader(const tuvok* tvk, tuvok_shader* shader)
     }
 }
 
+// internal function, intended to be only used by create_pipeline
+VkPipelineLayout* create_pipeline_layout(const tuvok* tvk)
+{
+    // JUST CREATE A EMPTY PIPE LAYOUT FOR NOW (TYEMPORARY)
+    VkPipelineLayoutCreateInfo li = {};
+    li.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+
+    VkPipelineLayout* layout = (VkPipelineLayout*) malloc(sizeof(VkPipelineLayout));
+    if (vkCreatePipelineLayout(tvk->device, &li, NULL, layout) != VK_SUCCESS)
+    {
+        free(layout);
+        fprintf(stderr, "TUVOK ERROR: Pipeline Layout couldn't be created!\n");
+        return NULL;
+    }
+    else
+        return layout;
+}
+
 tuvok_pipeline* create_pipeline(const tuvok* tvk, tuvok_pipeline_desc desc)
 {
     // describe vertex buffer data layout and how it will be pased to the VS
@@ -647,13 +665,49 @@ tuvok_pipeline* create_pipeline(const tuvok* tvk, tuvok_pipeline_desc desc)
     ds.minDepthBounds = desc.min_depth_bound;
     ds.maxDepthBounds = desc.max_depth_bound;
 
+    // color blending
+    VkPipelineColorBlendStateCreateInfo bs = {};
+    bs.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    bs.logicOpEnable = desc.use_logical_ops;
+    bs.logicOp = desc.logical_op;
+    bs.attachmentCount = desc.n_render_targets;
+    bs.pAttachments = desc.color_blending_states;
+    bs.blendConstants[0] = desc.blend_const_rgba[0];
+    bs.blendConstants[1] = desc.blend_const_rgba[1];
+    bs.blendConstants[2] = desc.blend_const_rgba[2];
+    bs.blendConstants[3] = desc.blend_const_rgba[3];
+
     //
     // I'M here
     // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
 
-    return NULL;
+
+    
+    // Finally create the pipeline
+    tuvok_pipeline* pipe = (tuvok_pipeline*) malloc(sizeof(tuvok_pipeline));
+
+    pipe->layout = create_pipeline_layout(tvk);
+    if (pipe->layout == NULL)
+    {
+        free(pipe);
+        return NULL;
+    }
+
+    return pipe;
 }
 
+void free_pipeline(const tuvok* tvk, tuvok_pipeline* pipe)
+{
+    if (tvk && pipe)
+    {
+        // free the pipeline layout
+        vkDestroyPipelineLayout(tvk->device, *(pipe->layout), NULL);
+        free(pipe->layout);
+
+
+        free(pipe);
+    }
+}
 
 
 #if USE_VALIDATION_LAYERS

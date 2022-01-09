@@ -59,6 +59,16 @@ int main (int argc, char** argv)
     pipe_desc.depth_test_enable = VK_FALSE;
     pipe_desc.stencil_test_enable = VK_FALSE;
 
+    // color blending
+    VkPipelineColorBlendAttachmentState blend = {};
+    blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | 
+        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    blend.blendEnable = VK_FALSE; 
+
+    pipe_desc.n_render_targets = 1u;
+    pipe_desc.use_logical_ops = VK_FALSE;
+    pipe_desc.color_blending_states = &blend;
+
 
     tuvok_pipeline* pipe = create_pipeline(lib_core, pipe_desc);
     if (!pipe)
@@ -80,6 +90,7 @@ int main (int argc, char** argv)
     //
     // cleanup
     //
+    free_pipeline(lib_core, pipe);
     free_shader(lib_core, vs);
     free_shader(lib_core, fs);
 	free_lib(lib_core);
