@@ -677,10 +677,12 @@ tuvok_pipeline* create_pipeline(const tuvok* tvk, tuvok_pipeline_desc desc)
     bs.blendConstants[2] = desc.blend_const_rgba[2];
     bs.blendConstants[3] = desc.blend_const_rgba[3];
 
+
+
+
     //
     // I'M here
-    // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
-
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Conclusion
 
     
     // Finally create the pipeline
@@ -703,12 +705,37 @@ void free_pipeline(const tuvok* tvk, tuvok_pipeline* pipe)
         // free the pipeline layout
         vkDestroyPipelineLayout(tvk->device, *(pipe->layout), NULL);
         free(pipe->layout);
-
-
         free(pipe);
     }
 }
 
+VkRenderPass* create_renderpass(const tuvok* tvk, tuvok_renderpass_desc desc)
+{
+    VkRenderPassCreateInfo rp_info = {};
+    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_info.attachmentCount = desc.n_attacments;
+    rp_info.pAttachments = desc.attachaments_array;     
+    rp_info.subpassCount = desc.n_render_subpasses;
+    rp_info.pSubpasses = desc.subpass_desc_array;
+
+    VkRenderPass* render_pass = (VkRenderPass*) malloc(sizeof(VkRenderPass));
+    if(vkCreateRenderPass(tvk->device, &rp_info, NULL, render_pass) != VK_SUCCESS)
+    {
+        free(render_pass);
+        return NULL;
+    }
+    else
+        return render_pass;
+}
+
+void free_renderpass(const tuvok* tvk, VkRenderPass* renderpass)
+{
+    if (tvk && renderpass)
+    {
+        vkDestroyRenderPass(tvk->device, *renderpass, NULL);
+        free(renderpass);
+    }
+}
 
 #if USE_VALIDATION_LAYERS
 VkBool32 VKAPI_PTR vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 

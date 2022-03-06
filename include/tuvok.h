@@ -130,6 +130,17 @@ typedef struct tuvok_pipeline_t
     VkPipelineLayout* layout;
 }tuvok_pipeline;
 
+typedef struct tuvok_renderpass_desc_t
+{
+    // description of what will be attached to the render pass
+    uint32_t n_attacments;
+    VkAttachmentDescription* attachaments_array;
+ 
+    // render sub-passes 
+    uint32_t n_render_subpasses;
+    VkSubpassDescription* subpass_desc_array;
+}tuvok_renderpass_desc;
+
 /*
  *      init and shutdown the lib
  */
@@ -139,8 +150,7 @@ void free_lib(tuvok* tvk);
 /*
  *      shader bytecode loading
  */
-tuvok_shader* load_shader(const tuvok* tvk, const char* filename, const char* main_name, uint8_t is_bytecode, 
-        VkShaderStageFlagBits stage);
+tuvok_shader* load_shader(const tuvok* tvk, const char* filename, const char* main_name, uint8_t is_bytecode, VkShaderStageFlagBits stage);
 void free_shader(const tuvok* tvk, tuvok_shader* shader);
 
 /*
@@ -150,5 +160,7 @@ tuvok_pipeline* create_pipeline(const tuvok* tvk, tuvok_pipeline_desc desc);
 void free_pipeline(const tuvok* tvk, tuvok_pipeline* pipe);
 void set_pipeline(const tuvok* tvk, const tuvok_pipeline* pipe);
 
+VkRenderPass* create_renderpass(const tuvok* tvk, tuvok_renderpass_desc desc);
+void free_renderpass(const tuvok* tvk, VkRenderPass* renderpass);
 
 #endif
